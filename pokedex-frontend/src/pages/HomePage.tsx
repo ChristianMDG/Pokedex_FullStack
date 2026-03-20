@@ -5,6 +5,7 @@ import Pagination from '../components/Pagination';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { usePokemonList } from '../hooks/usePokemon';
 import type { PokemonBasic } from '../types/pokemon.types';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const HomePage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -53,54 +54,84 @@ const HomePage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center p-8 bg-gray-800 rounded-xl shadow-lg max-w-md border border-gray-700"
+        >
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Erreur de chargement</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <h2 className="text-2xl font-bold text-white mb-2">Loading Error</h2>
+          <p className="text-gray-400 mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
           >
-            Réessayer
+            Try Again
           </button>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header avec animation */}
-        <div className="text-center mb-12 animate-fade-in">
-          <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 bg-clip-text text-transparent mb-4">
-            Pokédex
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Découvrez et explorez l'univers des Pokémon
-          </p>
-          {hasSearched && searchTerm && (
-            <div className="mt-2 text-sm text-blue-600">
-              {searchResults?.length || 0} résultat(s) trouvé(s) pour "{searchTerm}"
+    <div className="min-h-screen bg-gray-900">
+      {/* Header moderne avec gradient */}
+      <div className="bg-gradient-to-br from-red-600 via-red-700 to-gray-900 border-b border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center"
+          >
+            <div className="inline-block">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg">
+                  <svg className="w-10 h-10 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+                    <path d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6z"/>
+                  </svg>
+                </div>
+              </div>
+              <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
+                Pokédex
+              </h1>
+              <p className="text-red-200 text-lg">
+                Discover and explore the world of Pokémon
+              </p>
+              {hasSearched && searchTerm && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-3 inline-block px-4 py-2 bg-red-500/20 backdrop-blur-sm rounded-lg"
+                >
+                  <span className="text-red-200 text-sm">
+                    {searchResults?.length || 0} result(s) found for "{searchTerm}"
+                  </span>
+                </motion.div>
+              )}
             </div>
-          )}
+          </motion.div>
         </div>
+      </div>
 
-        {/* Barre de recherche améliorée */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Barre de recherche */}
         <div className="flex justify-center mb-8">
           <div className="w-full max-w-2xl">
             <SearchBar onSearch={handleSearch} />
           </div>
-          {/* Le bouton Effacer s'affiche uniquement si une recherche a été effectuée */}
           {hasSearched && (
-            <button
+            <motion.button
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0 }}
               onClick={clearSearch}
-              className="ml-3 px-5 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-              aria-label="Effacer la recherche"
+              className="ml-3 px-5 py-3 bg-gray-800 text-gray-300 rounded-xl hover:bg-gray-700 hover:text-white transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+              aria-label="Clear search"
             >
-              ✕ Effacer
-            </button>
+              ✕ Clear
+            </motion.button>
           )}
         </div>
 
@@ -112,29 +143,44 @@ const HomePage: React.FC = () => {
         ) : (
           <>
             {/* Grille des Pokémon */}
-            {currentItems.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="text-6xl mb-4">🔍</div>
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                  Aucun Pokémon trouvé
-                </h3>
-                <p className="text-gray-500">
-                  Essayez un autre nom ou numéro
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-8">
-                {currentItems.map((pokemon, index) => (
-                  <div
-                    key={pokemon.name}
-                    className="animate-fade-in-up"
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
-                    <PokemonCard pokemon={pokemon} index={index} />
+            <AnimatePresence mode="wait">
+              {currentItems.length === 0 ? (
+                <motion.div
+                  key="empty"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="text-center py-20"
+                >
+                  <div className="text-8xl mb-4">🔍</div>
+                  <h3 className="text-2xl font-bold text-white mb-2">
+                    No Pokémon Found
+                  </h3>
+                  <p className="text-gray-400">
+                    Try a different name or number
+                  </p>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="grid"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-8">
+                    {currentItems.map((pokemon, index) => (
+                      <div
+                        key={pokemon.name || pokemon.id || index}
+                        className="animate-fade-in-up"
+                        style={{ animationDelay: `${index * 50}ms` }}
+                      >
+                        <PokemonCard pokemon={pokemon} index={index} />
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Pagination pour la liste principale */}
             {!searchResults && totalPages > 1 && (
@@ -151,23 +197,23 @@ const HomePage: React.FC = () => {
             {/* Pagination pour les résultats de recherche */}
             {searchResults && searchResults.length > itemsPerPage && (
               <div className="mt-8">
-                <div className="flex justify-center items-center space-x-2">
+                <div className="flex justify-center items-center gap-3">
                   <button
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-5 py-2.5 bg-gray-800 text-gray-300 rounded-xl hover:bg-gray-700 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 border border-gray-700"
                   >
-                    ← Précédent
+                    ← Previous
                   </button>
-                  <span className="px-4 py-2 text-gray-700">
-                    Page {currentPage} sur {Math.ceil(searchResults.length / itemsPerPage)}
+                  <span className="px-4 py-2 text-gray-300">
+                    Page {currentPage} of {Math.ceil(searchResults.length / itemsPerPage)}
                   </span>
                   <button
                     onClick={() => setCurrentPage(prev => Math.min(Math.ceil(searchResults.length / itemsPerPage), prev + 1))}
                     disabled={currentPage === Math.ceil(searchResults.length / itemsPerPage)}
-                    className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-5 py-2.5 bg-gray-800 text-gray-300 rounded-xl hover:bg-gray-700 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 border border-gray-700"
                   >
-                    Suivant →
+                    Next →
                   </button>
                 </div>
               </div>
@@ -178,13 +224,19 @@ const HomePage: React.FC = () => {
 
       {/* Bouton retour en haut */}
       {!loading && displayPokemons.length > 0 && (
-        <button
+        <motion.button
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-8 right-8 bg-blue-500 text-white p-3 rounded-full shadow-lg hover:bg-blue-600 transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          aria-label="Retour en haut"
+          className="fixed bottom-8 right-8 bg-red-600 text-white p-3 rounded-full shadow-lg hover:bg-red-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+          aria-label="Back to top"
         >
-          ↑
-        </button>
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+          </svg>
+        </motion.button>
       )}
     </div>
   );
