@@ -2,16 +2,29 @@ import { Request, Response } from 'express';
 import { pokemonService } from '../services/pokemon.service';
 
 export class PokemonController {
+  private handleError(error: unknown, res: Response, notFoundMessage?: string): void {
+    console.error('Error:', error);
+    
+    if (notFoundMessage && error instanceof Error && error.message.includes('404')) {
+      res.status(404).json({ error: notFoundMessage });
+    } else {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  private extractPaginationParams(req: Request): { limit: number; offset: number } {
+    const limit = Math.min(parseInt(req.query.limit as string) || 30, 100);
+    const offset = parseInt(req.query.offset as string) || 0;
+    return { limit, offset };
+  }
+
   async getPokemonList(req: Request, res: Response): Promise<void> {
     try {
-      const limit = Math.min(parseInt(req.query.limit as string) || 20, 100); // Limite max de sécurité
-      const offset = parseInt(req.query.offset as string) || 0;
-      
+      const { limit, offset } = this.extractPaginationParams(req);
       const result = await pokemonService.getPokemonList(limit, offset);
       res.json(result);
     } catch (error) {
-      console.error('Error in getPokemonList:', error);
-      res.status(500).json({ error: 'Failed to fetch pokemon list' });
+      this.handleError(error, res);
     }
   }
 
@@ -21,39 +34,32 @@ export class PokemonController {
       const pokemon = await pokemonService.getPokemonDetail(nameOrId);
       res.json(pokemon);
     } catch (error) {
-      console.error('Error in getPokemonDetail:', error);
-      if (error instanceof Error && error.message.includes('404')) {
-        res.status(404).json({ error: 'Pokemon not found' });
-      } else {
-        res.status(500).json({ error: 'Failed to fetch pokemon details' });
-      }
+      this.handleError(error, res, 'Pokemon not found');
     }
   }
 
   async searchPokemon(req: Request, res: Response): Promise<void> {
     try {
-      const { q } = req.query;
-      if (!q || typeof q !== 'string' || q.trim().length === 0) {
-        res.status(400).json({ error: 'Search query required' });
+      const searchQuery = req.query.q as string;
+      
+      if (!searchQuery?.trim()) {
+        res.status(400).json({ error: 'Search query is required' });
         return;
       }
       
-      const results = await pokemonService.searchPokemon(q);
+      const results = await pokemonService.searchPokemon(searchQuery);
       res.json(results);
     } catch (error) {
-      console.error('Error in searchPokemon:', error);
-      res.status(500).json({ error: 'Failed to search pokemon' });
+      this.handleError(error, res);
     }
   }
 
-  // Custom Pokemon CRUD operations
-  getCustomPokemons(req: Request, res: Response): void {
+  getCustomPokemons(_req: Request, res: Response): void {
     try {
       const pokemons = pokemonService.getCustomPokemons();
       res.json(pokemons);
     } catch (error) {
-      console.error('Error in getCustomPokemons:', error);
-      res.status(500).json({ error: 'Failed to fetch custom pokemons' });
+      this.handleError(error, res);
     }
   }
 
@@ -69,8 +75,7 @@ export class PokemonController {
       
       res.json(pokemon);
     } catch (error) {
-      console.error('Error in getCustomPokemonById:', error);
-      res.status(500).json({ error: 'Failed to fetch custom pokemon' });
+      this.handleError(error, res);
     }
   }
 
@@ -78,19 +83,9 @@ export class PokemonController {
     try {
       const { name, types, sprite, height, weight, stats } = req.body;
       
-      // Validation améliorée
-      if (!name || typeof name !== 'string' || name.trim().length === 0) {
-        res.status(400).json({ error: 'Valid name is required' });
-        return;
-      }
-      
-      if (!types || !Array.isArray(types) || types.length === 0) {
-        res.status(400).json({ error: 'Types array is required' });
-        return;
-      }
-      
-      if (!sprite || typeof sprite !== 'string') {
-        res.status(400).json({ error: 'Valid sprite URL is required' });
+      // Validation
+      if (!this.isValidPokemonData({ name, types, sprite })) {
+        res.status(400).json({ error: 'Invalid pokemon data' });
         return;
       }
       
@@ -100,20 +95,12 @@ export class PokemonController {
         sprite,
         height: height ? Number(height) : undefined,
         weight: weight ? Number(weight) : undefined,
-        stats: stats ? {
-          hp: Number(stats.hp) || 0,
-          attack: Number(stats.attack) || 0,
-          defense: Number(stats.defense) || 0,
-          specialAttack: Number(stats.specialAttack) || 0,
-          specialDefense: Number(stats.specialDefense) || 0,
-          speed: Number(stats.speed) || 0,
-        } : undefined,
+        stats: stats ? this.normalizeStats(stats) : undefined,
       });
       
       res.status(201).json(newPokemon);
     } catch (error) {
-      console.error('Error in createCustomPokemon:', error);
-      res.status(500).json({ error: 'Failed to create custom pokemon' });
+      this.handleError(error, res);
     }
   }
 
@@ -129,8 +116,7 @@ export class PokemonController {
       
       res.json(updated);
     } catch (error) {
-      console.error('Error in updateCustomPokemon:', error);
-      res.status(500).json({ error: 'Failed to update custom pokemon' });
+      this.handleError(error, res);
     }
   }
 
@@ -146,9 +132,27 @@ export class PokemonController {
       
       res.status(204).send();
     } catch (error) {
-      console.error('Error in deleteCustomPokemon:', error);
-      res.status(500).json({ error: 'Failed to delete custom pokemon' });
+      this.handleError(error, res);
     }
+  }
+
+  private isValidPokemonData(data: { name: any; types: any; sprite: any }): boolean {
+    return (
+      data.name && typeof data.name === 'string' && data.name.trim().length > 0 &&
+      data.types && Array.isArray(data.types) && data.types.length > 0 &&
+      data.sprite && typeof data.sprite === 'string'
+    );
+  }
+
+  private normalizeStats(stats: any) {
+    return {
+      hp: Number(stats.hp) || 0,
+      attack: Number(stats.attack) || 0,
+      defense: Number(stats.defense) || 0,
+      specialAttack: Number(stats.specialAttack) || 0,
+      specialDefense: Number(stats.specialDefense) || 0,
+      speed: Number(stats.speed) || 0,
+    };
   }
 }
 
